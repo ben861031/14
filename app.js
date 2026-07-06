@@ -156,7 +156,8 @@ function renderResult(rows, settings, drinkTotal, finalPaid, difference, shareCo
     const div = document.createElement('div');
     div.className = 'result-card';
     const displayValue = typeof value === 'number' ? value.toLocaleString('zh-TW') : value;
-    div.innerHTML = `<span>${label}</span><strong>${displayValue}</strong>`;
+    const unit = label === '參與分攤人數' ? '人' : '元';
+    div.innerHTML = `<span>${label}</span><strong>${displayValue}</strong><small>${unit}</small>`;
     els.resultCards.appendChild(div);
   });
 

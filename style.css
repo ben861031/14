@@ -267,10 +267,11 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 900px;
+  min-width: 820px;
+  table-layout: fixed;
 }
 th, td {
-  padding: 10px;
+  padding: 9px 8px;
   border-bottom: 2px dashed rgba(191,169,133,.55);
   text-align: left;
   vertical-align: middle;
@@ -282,8 +283,21 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
+  white-space: nowrap;
 }
-td input { padding: 10px; border-radius: 12px; background: #fffef8; }
+/* 訂購明細欄寬微調：避免標題換行，單價/數量不用佔太寬 */
+th:nth-child(1), td:nth-child(1) { width: 72px; }
+th:nth-child(2), td:nth-child(2) { width: 210px; }
+th:nth-child(3), td:nth-child(3) { width: 210px; }
+th:nth-child(4), td:nth-child(4) { width: 105px; }
+th:nth-child(5), td:nth-child(5) { width: 105px; }
+th:nth-child(6), td:nth-child(6) { width: 92px; text-align: center; }
+th:nth-child(7), td:nth-child(7) { width: 92px; text-align: center; }
+th:nth-child(8), td:nth-child(8) { width: 74px; text-align: center; }
+th:nth-child(9), td:nth-child(9) { width: 76px; text-align: center; }
+td input { width: 100%; padding: 10px; border-radius: 12px; background: #fffef8; }
+.price, .qty { max-width: 92px; }
+.baseAmount, .diffShare, .payAmount { text-align: center; }
 .center { text-align: center; }
 .center input { width: 18px; height: 18px; accent-color: var(--primary); }
 .strong { font-weight: 900; color: var(--primary-dark); font-size: 17px; }
@@ -297,16 +311,25 @@ td input { padding: 10px; border-radius: 12px; background: #fffef8; }
   margin-bottom: 16px;
 }
 .result-card {
+  min-height: 118px;
   border: 2px solid var(--text);
   border-radius: 20px 17px 22px 18px;
-  padding: 16px;
+  padding: 18px 16px;
   background: #fff7dc;
   box-shadow: 4px 5px 0 rgba(59,47,37,.1);
   transform: rotate(-.4deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 .result-card:nth-child(even) { background: #eaf1d8; transform: rotate(.4deg); }
-.result-card span { display: block; color: var(--muted); font-size: 13px; margin-bottom: 8px; font-weight: 900; }
-.result-card strong { font-size: 28px; color: var(--primary-dark); }
+.result-card:nth-child(3) { background: #fff2cf; }
+.result-card:nth-child(4) { background: #edf4df; }
+.result-card span { display: block; width: 100%; color: var(--muted); font-size: 14px; margin-bottom: 10px; font-weight: 900; text-align: center; }
+.result-card strong { display: block; width: 100%; font-size: 42px; line-height: 1; color: var(--primary-dark); text-align: center; }
+.result-card small { display: block; width: 100%; margin-top: 7px; color: var(--muted); font-size: 13px; font-weight: 900; text-align: center; }
 
 textarea {
   min-height: 230px;
