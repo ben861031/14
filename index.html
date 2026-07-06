@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>辦公室飲料訂購試算系統</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="doodle-bg doodle-1">🧋</div>
+    <div class="doodle-bg doodle-2">☕</div>
+    <div class="doodle-bg doodle-3">🍋</div>
+
+    <aside class="side-nav" aria-label="主要功能列">
+      <div class="side-brand">
+        <span class="brand-icon icon-drink" aria-hidden="true"></span>
+        <div>
+          <strong>飲料試算</strong>
+          <small>功能列</small>
+        </div>
+      </div>
+      <nav class="side-links">
+        <a href="#orderInfo"><span class="nav-icon nav-order" aria-hidden="true"></span>訂單資訊</a>
+        <a href="#paidSettings"><span class="nav-icon nav-money" aria-hidden="true"></span>實付金額</a>
+        <a href="#memberSettings"><span class="nav-icon nav-people" aria-hidden="true"></span>常用人員</a>
+        <a href="#orderDetails"><span class="nav-icon nav-list" aria-hidden="true"></span>訂購明細</a>
+        <a href="#calcResult"><span class="nav-icon nav-receipt" aria-hidden="true"></span>試算結果</a>
+        <a href="#historyRecords"><span class="nav-icon nav-history" aria-hidden="true"></span>歷史紀錄</a>
+      </nav>
+    </aside>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">手帳版 Office Drink Calculator</p>
+        <h1><span class="title-sticker">辦公室飲料訂購試算系統</span></h1>
+        <p class="subtitle">輸入每位同仁的飲料金額與平台最後實付總額，系統自動反推差額；多出的費用平均加回，折扣平均扣除。</p>
+      </div>
+      <div class="hero-card">
+        <div class="cup-doodle" aria-hidden="true">🧋</div>
+        <span>本次應收總額</span>
+        <strong id="grandTotal">0</strong>
+        <small>元</small>
+      </div>
+    </header>
+
+    <main class="grid-layout">
+      <section class="panel order-panel tape-card" id="orderInfo">
+        <div class="panel-title">
+          <div>
+            <h2>訂單資訊</h2>
+            <p>填店家與訂購日期即可，其他交給系統試算。</p>
+          </div>
+          <button class="ghost-btn" id="loadSampleBtn">載入範例</button>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            店家名稱
+            <input id="shopName" type="text" placeholder="例如：迷客夏、五十嵐" />
+          </label>
+          <label>
+            訂購日期
+            <input id="orderDate" type="date" />
+          </label>
+        </div>
+      </section>
+
+      <section class="panel settings-panel tape-card alt-tape" id="paidSettings">
+        <div class="panel-title">
+          <div>
+            <h2>最後實付金額</h2>
+            <p>只要填平台實際刷卡／付款金額，系統會自動反推差額。</p>
+          </div>
+        </div>
+
+        <div class="money-grid single-money">
+          <label>
+            平台最後實付總額
+            <input class="money-input" id="finalPaidAmount" type="number" min="0" step="1" value="0" placeholder="例如：飲料原價 320，平台實付 345" />
+          </label>
+        </div>
+
+        <div class="mode-box">
+          <label class="toggle-line">
+            <input id="onlyShareChecked" type="checkbox" checked />
+            只由勾選「參與分攤」的人平均分攤差額
+          </label>
+          <p>差額＝最後實付總額－飲料原價總額。差額為正數代表外送／平台費，會平均加回；差額為負數代表優惠折扣，會平均扣除。</p>
+        </div>
+      </section>
+
+      <section class="panel member-panel full-width tape-card member-card" id="memberSettings">
+        <div class="panel-title">
+          <div>
+            <h2>常用人員建檔</h2>
+            <p>把常訂飲料的同仁先存起來，訂購明細可快速點選帶入；臨時人員仍可直接手 key。</p>
+          </div>
+          <div class="member-add">
+            <input id="memberNameInput" type="text" placeholder="輸入姓名，例如：承遠" />
+            <button id="addMemberBtn">＋ 加入名單</button>
+          </div>
+        </div>
+        <div class="member-tools">
+          <div id="memberChips" class="member-chips"></div>
+          <button class="ghost-btn danger" id="clearMembersBtn">清空人員名單</button>
+        </div>
+      </section>
+
+      <section class="panel people-panel full-width notebook-card" id="orderDetails">
+        <div class="panel-title sticky-head">
+          <div>
+            <h2>訂購明細</h2>
+            <p>可直接新增多人，每列會自動試算。</p>
+          </div>
+          <div class="button-group">
+            <button id="addRowBtn">＋ 新增一列</button>
+            <button class="ghost-btn" id="settleBtn">結清並存歷史</button>
+            <button class="ghost-btn danger" id="clearBtn">清空</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>參與分攤</th>
+                <th>姓名</th>
+                <th>品項</th>
+                <th>單價</th>
+                <th>數量</th>
+                <th>飲料金額</th>
+                <th>差額分攤</th>
+                <th>應付</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel result-panel full-width receipt-card" id="calcResult">
+        <div class="panel-title">
+          <div>
+            <h2>試算結果</h2>
+            <p id="summaryText">目前尚未輸入資料。</p>
+          </div>
+          <div class="button-group">
+            <button id="copyBtn">複製群組訊息</button>
+            <button class="ghost-btn" id="exportCsvBtn">匯出 CSV</button>
+            <button class="ghost-btn" id="printBtn">列印 / 存 PDF</button>
+          </div>
+        </div>
+
+        <div class="cards" id="resultCards"></div>
+
+        <textarea id="messageBox" readonly placeholder="這裡會產生可貼到 LINE / Teams 的收款訊息"></textarea>
+      </section>
+
+      <section class="panel history-panel full-width notebook-card" id="historyRecords">
+        <div class="panel-title">
+          <div>
+            <h2>歷史紀錄</h2>
+            <p>按下「結清並存歷史」後，訂單會保留在這裡，方便之後查詢。</p>
+          </div>
+          <div class="button-group">
+            <button class="ghost-btn" id="exportHistoryBtn">匯出歷史 CSV</button>
+            <button class="ghost-btn danger" id="clearHistoryBtn">清空歷史</button>
+          </div>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <template id="rowTemplate">
+    <tr>
+      <td class="center"><input class="share" type="checkbox" checked /></td>
+      <td>
+        <div class="name-cell">
+          <input class="name" type="text" placeholder="姓名" list="memberOptions" />
+          <button class="mini-btn pick-member" type="button">選</button>
+        </div>
+      </td>
+      <td><input class="item" type="text" placeholder="品項 / 甜度冰塊" /></td>
+      <td><input class="price" type="number" min="0" step="1" value="0" /></td>
+      <td><input class="qty" type="number" min="1" step="1" value="1" /></td>
+      <td class="baseAmount">0</td>
+      <td class="diffShare">0</td>
+      <td class="payAmount strong">0</td>
+      <td><button class="icon-btn delete-row" title="刪除">刪除</button></td>
+    </tr>
+  </template>
+
+  <datalist id="memberOptions"></datalist>
+  <script src="app.js"></script>
+</body>
+</html>
