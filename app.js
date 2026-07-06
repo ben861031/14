@@ -56,6 +56,31 @@ function allocateEven(total, count) {
   return Array.from({ length: safeCount }, (_, index) => sign * (base + (index < remainder ? 1 : 0)));
 }
 
+function allocateByRatio(total, eligibleRows) {
+  const safeRows = Array.isArray(eligibleRows) ? eligibleRows : [];
+  if (!safeRows.length || total === 0) return Array(safeRows.length).fill(0);
+
+  const baseTotal = safeRows.reduce((sum, row) => sum + Math.max(0, Number(row.base || 0)), 0);
+  if (baseTotal <= 0) return allocateEven(total, safeRows.length);
+
+  const sign = total < 0 ? -1 : 1;
+  const absTotal = Math.abs(Math.round(total));
+  const rawShares = safeRows.map(row => (Math.max(0, Number(row.base || 0)) / baseTotal) * absTotal);
+  const shares = rawShares.map(Math.floor);
+  let remainder = absTotal - shares.reduce((sum, value) => sum + value, 0);
+
+  rawShares
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .forEach(item => {
+      if (remainder <= 0) return;
+      shares[item.index] += 1;
+      remainder -= 1;
+    });
+
+  return shares.map(value => sign * value);
+}
+
 function addRow(data = {}) {
   const node = els.rowTemplate.content.cloneNode(true);
   const row = node.querySelector('tr');
@@ -105,7 +130,8 @@ function getSettings() {
     payerName: '',
     orderNote: '',
     finalPaidAmount: money(els.finalPaidAmount.value),
-    onlyShareChecked: els.onlyShareChecked.checked
+    onlyShareChecked: els.onlyShareChecked.checked,
+    splitMode: document.querySelector('input[name="splitMode"]:checked')?.value || 'even'
   };
 }
 
@@ -116,7 +142,9 @@ function calculate() {
   const finalPaid = settings.finalPaidAmount || drinkTotal;
   const difference = finalPaid - drinkTotal;
   const eligibleRows = settings.onlyShareChecked ? rows.filter(row => row.share) : rows;
-  const diffShares = allocateEven(difference, eligibleRows.length);
+  const diffShares = settings.splitMode === 'ratio'
+    ? allocateByRatio(difference, eligibleRows)
+    : allocateEven(difference, eligibleRows.length);
 
   eligibleRows.forEach((row, index) => {
     row.diffShare = diffShares[index] || 0;
@@ -138,7 +166,8 @@ function renderResult(rows, settings, drinkTotal, finalPaid, difference, shareCo
   const grandTotal = rows.reduce((sum, row) => sum + row.total, 0);
   els.grandTotal.textContent = grandTotal.toLocaleString('zh-TW');
 
-  const diffLabel = difference > 0 ? `多出 ${difference} 元，平均加回` : difference < 0 ? `折扣 ${Math.abs(difference)} 元，平均扣除` : '無差額';
+  const splitModeLabel = settings.splitMode === 'ratio' ? '依飲料金額比例分攤' : '平均分攤';
+  const diffLabel = difference > 0 ? `多出 ${difference} 元，${splitModeLabel}加回` : difference < 0 ? `折扣 ${Math.abs(difference)} 元，${splitModeLabel}扣除` : '無差額';
   els.summaryText.textContent = rows.length
     ? `飲料原價 ${drinkTotal} 元，最後實付 ${finalPaid} 元，${diffLabel}，參與分攤 ${shareCount} 人。`
     : '目前尚未輸入資料。';
@@ -248,42 +277,43 @@ function insertMemberToRow(name) {
   handleChange();
 }
 
+function closeMemberPicker() {
+  const popover = document.querySelector('.member-popover');
+  if (popover) popover.remove();
+}
+
 function openMemberPicker(row) {
   const members = getMembers();
   if (!members.length) {
     showToast('尚未建立常用人員名單');
     return;
   }
-  const old = document.querySelector('.member-popover');
-  if (old) old.remove();
 
+  // 一次只允許一個常用人員名單開啟。
+  closeMemberPicker();
+
+  const pickerButton = row.querySelector('.pick-member');
   const popover = document.createElement('div');
   popover.className = 'member-popover';
   popover.innerHTML = members.map(name => `<button type="button" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join('');
   document.body.appendChild(popover);
 
-  const rect = row.querySelector('.pick-member').getBoundingClientRect();
-  popover.style.left = `${Math.min(rect.left, window.innerWidth - 220)}px`;
-  popover.style.top = `${rect.bottom + 8}px`;
+  const rect = pickerButton.getBoundingClientRect();
+  const left = Math.max(12, Math.min(rect.left, window.innerWidth - popover.offsetWidth - 12));
+  const top = Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - popover.offsetHeight - 12));
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
 
   popover.addEventListener('click', event => {
     const button = event.target.closest('button[data-name]');
     if (!button) return;
     row.querySelector('.name').value = button.dataset.name;
     row.querySelector('.item').focus();
-    popover.remove();
+    closeMemberPicker();
     handleChange();
   });
-
-  setTimeout(() => {
-    document.addEventListener('click', function closePicker(event) {
-      if (!popover.contains(event.target) && !event.target.classList.contains('pick-member')) {
-        popover.remove();
-        document.removeEventListener('click', closePicker);
-      }
-    });
-  });
 }
+
 
 function saveState() {
   const state = {
@@ -312,6 +342,7 @@ function loadState() {
     els.orderDate.value = todayText();
     els.finalPaidAmount.value = settings.finalPaidAmount ?? 0;
     els.onlyShareChecked.checked = settings.onlyShareChecked ?? true;
+    setSplitMode(settings.splitMode || 'even');
 
     els.rowsBody.innerHTML = '';
     const rows = Array.isArray(state.rows) && state.rows.length ? state.rows : [{}, {}, {}];
@@ -328,6 +359,7 @@ function loadSample() {
   els.shopName.value = '迷客夏';
   els.orderDate.value = todayText();
   els.onlyShareChecked.checked = true;
+  setSplitMode('even');
 
   els.rowsBody.innerHTML = '';
   [
@@ -448,6 +480,7 @@ function resetCurrentOrder(askConfirm = true) {
   els.orderDate.value = todayText();
   els.finalPaidAmount.value = 0;
   els.onlyShareChecked.checked = true;
+  setSplitMode('even');
   els.rowsBody.innerHTML = '';
   addRow();
   addRow();
@@ -483,6 +516,12 @@ function renderHistory() {
   }).join('');
 }
 
+function setSplitMode(mode) {
+  const targetMode = mode === 'ratio' ? 'ratio' : 'even';
+  const input = document.querySelector(`input[name="splitMode"][value="${targetMode}"]`);
+  if (input) input.checked = true;
+}
+
 function escapeHtml(text) {
   return String(text ?? '').replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
 }
@@ -511,6 +550,7 @@ function handleHistoryClick(event) {
     els.orderDate.value = settings.orderDate || todayText();
     els.finalPaidAmount.value = settings.finalPaidAmount ?? record.finalPaid ?? 0;
     els.onlyShareChecked.checked = settings.onlyShareChecked ?? true;
+    setSplitMode(settings.splitMode || 'even');
     els.rowsBody.innerHTML = '';
     record.rows.forEach(addRow);
     calculate();
@@ -598,6 +638,10 @@ function bindGlobalEvents() {
     el.addEventListener('change', handleChange);
   });
 
+  document.querySelectorAll('input[name="splitMode"]').forEach(el => {
+    el.addEventListener('change', handleChange);
+  });
+
   els.addMemberBtn.addEventListener('click', () => addMember());
   els.memberNameInput.addEventListener('keydown', event => {
     if (event.key === 'Enter') addMember();
@@ -633,6 +677,14 @@ function bindGlobalEvents() {
   els.copyBtn.addEventListener('click', copyMessage);
   els.exportCsvBtn.addEventListener('click', exportCsv);
   els.printBtn.addEventListener('click', () => window.print());
+
+  // 常用人員下拉名單：點空白、捲動或縮放時自動關閉，避免釘在畫面上。
+  document.addEventListener('click', event => {
+    if (event.target.closest('.member-popover') || event.target.closest('.pick-member')) return;
+    closeMemberPicker();
+  });
+  window.addEventListener('scroll', closeMemberPicker, true);
+  window.addEventListener('resize', closeMemberPicker);
 }
 
 bindGlobalEvents();

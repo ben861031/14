@@ -84,9 +84,22 @@
         <div class="mode-box">
           <label class="toggle-line">
             <input id="onlyShareChecked" type="checkbox" checked />
-            只由勾選「參與分攤」的人平均分攤差額
+            只由勾選「參與分攤」的人分攤差額
           </label>
-          <p>差額＝最後實付總額－飲料原價總額。差額為正數代表外送／平台費，會平均加回；差額為負數代表優惠折扣，會平均扣除。</p>
+
+          <div class="split-mode-group" aria-label="分攤方式">
+            <span>分攤方式</span>
+            <label>
+              <input type="radio" name="splitMode" value="even" checked />
+              平均分攤
+            </label>
+            <label>
+              <input type="radio" name="splitMode" value="ratio" />
+              依飲料金額比例分攤
+            </label>
+          </div>
+
+          <p>差額＝最後實付總額－飲料原價總額。平均分攤適合外送費／平台費；比例分攤則會讓飲料買越多或越貴的人負擔較多差額。</p>
         </div>
       </section>
 

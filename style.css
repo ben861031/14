@@ -766,3 +766,42 @@ textarea {
 }
 .nav-history::before { top: 3px; background: #eaf1d8; }
 .nav-history::after { top: 10px; background: #fff7dc; }
+
+.split-mode-group {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.split-mode-group > span {
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.split-mode-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .58);
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.split-mode-group label:has(input:checked) {
+  background: #eaf1d8;
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.split-mode-group label:hover {
+  transform: translateY(-1px);
+}
